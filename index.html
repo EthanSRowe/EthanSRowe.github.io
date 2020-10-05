@@ -182,8 +182,8 @@
             four = [
                 [diagonal,0,0,0],
                 [0,diagonal,0,0],
-                [0,0,1.0,4.0],
-                [0,0,1.0,4.0]
+                [0,0,1.0,6.0],
+                [0,0,1.0,6.0]
             ];
 
             function slide(m, x, y, t) {
@@ -203,7 +203,13 @@
 
             function twist(x, y) {
                 var l = Math.hypot(x, y);
-                if(l != 0) {
+                if(0===l) {
+                    return twist(
+                        3*Math.cos((tock/Math.pow(2.0,15))*3.0),
+                        4*Math.sin((tock/Math.pow(2.0,15))*4.0)
+                    );
+                }
+                else {
                     var s = Math.sin(l/1024/2);
                     return [s*y/l, s*-x/l, 0, Math.cos(l/1024/2)];
                 }
