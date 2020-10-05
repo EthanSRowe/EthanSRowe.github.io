@@ -133,16 +133,16 @@
 
         function qpfour(q,p) {
             return compose(
-                [   [+q[0],-q[1],-q[2],-q[3]],
-                    [+q[1],+q[0],-q[3],+q[2]],
-                    [+q[2],+q[3],+q[0],-q[1]],
-                    [+q[3],-q[2],+q[1],+q[0]]
+                [   [+q[2],+q[3],+q[1],-q[0]],
+                    [+q[0],-q[1],+q[3],+q[2]],
+                    [+q[1],+q[0],-q[2],+q[3]],
+                    [+q[3],-q[2],-q[0],-q[1]]
                 ],
-                [   [+p[0],-p[1],-p[2],-p[3]],
-                    [+p[1],+p[0],+p[3],-p[2]],
-                    [+p[2],-p[3],+p[0],+p[1]],
-                    [+p[3],+p[2],-p[1],+p[0]]
-                ]
+                [   [+p[2],+p[3],-p[1],+p[0]],
+                    [+p[0],+p[1],+p[3],-p[2]],
+                    [+p[1],-p[0],+p[2],+p[3]],
+                    [+p[3],-p[2],-p[0],-p[1]]
+                ],
             );
         }
 
@@ -171,7 +171,7 @@
 
         var step=1000/60, tock=0, delta=0;
         function loop(tick) {
-            delta += tick-tock;
+            delta += Math.min(tick-tock,16);
             tock = tick;
             while(delta>=step) {
                 delta -= step;
@@ -182,7 +182,6 @@
             four = [
                 [diagonal,0,0,0],
                 [0,diagonal,0,0],
-                [0,0,1.0,6.0],
                 [0,0,1.0,6.0]
             ];
 
@@ -194,24 +193,21 @@
             }
 
             var d = dot([mouse[0], mouse[1]], [mouse[2]-w2, mouse[3]-h2]);
-            if(d<0) {
-                slide(mouse,4,5,.25);
-            }
-            if(0<d){
-                slide(mouse,6,7,.25);
-            }
+            if(d<0) slide(mouse,4,5,.25);
+            if(0<d) slide(mouse,6,7,.25);
 
             function twist(x, y) {
                 var l = Math.hypot(x, y);
                 if(0===l) {
                     return twist(
-                        3*Math.cos((tock/Math.pow(2.0,15))*3.0),
-                        4*Math.sin((tock/Math.pow(2.0,15))*4.0)
+                        4*Math.cos((tock/Math.pow(2.0,15))*3.0),
+                        3*Math.sin((tock/Math.pow(2.0,15))*4.0)
                     );
                 }
                 else {
-                    var s = Math.sin(l/1024/2);
-                    return [s*y/l, s*-x/l, 0, Math.cos(l/1024/2)];
+                    var t = l/1024.0;
+                    var s = Math.sin(t/2);
+                    return [s*y/l, s*-x/l, 0, Math.cos(t/2)];
                 }
                 return [0,0,0,1];
             }
@@ -237,7 +233,7 @@
                 .map(p => transform(five, p))
                 .map(p => p.slice(0,3).concat(3-p[3])) // 5d -> 4d
                 .map(p => transform(four, p))
-                .map(p => p.slice(0,2).map(d => d/p[3])) // 4d -> 3d -> 2d
+                .map(p => p.slice(0,2).map(d => d/p[2])) // 4d -> 3d -> 2d
                 .map(p => [p[0]+w2, p[1]+h2])
                 .map(p => ctx.lineTo(...p));
             ctx.closePath();
