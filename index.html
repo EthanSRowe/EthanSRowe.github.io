@@ -8,21 +8,7 @@
 
         var left = [0,0,0,1];
         var right = [0,0,0,1];
-        var mouse = [0,0];
-
-        var five = [
-            [1,0,0,0],
-            [0,1,0,0],
-            [0,0,1,0],
-            [0,0,0,1]
-        ];
-
-        var four = [
-            [1,0,0,0],
-            [0,1,0,0],
-            [0,0,1,0],
-            [0,0,0,1]
-        ];
+        var mouse = [0,0,0,0,0,0,0,0];
 
         function identity(d, s) {
             var m = [];
@@ -35,6 +21,9 @@
             }
             return m;
         }
+
+        var five = identity(4,1);
+        var four = identity(4,1);
 
         function ttt(l, r) {
             var t = [];
@@ -109,18 +98,12 @@
                 l[0]*r[1] - l[1]*r[0]
             ];
         }
-        
-        function qcompose(q, p) {
-            return [
-              + q[0]*p[3] + q[1]*p[2] - q[2]*p[1] + q[3]*p[0],
-              - q[0]*p[2] + q[1]*p[3] + q[2]*p[0] + q[3]*p[1],
-              + q[0]*p[1] - q[1]*p[0] + q[2]*p[3] + q[3]*p[2],
-              - q[0]*p[0] - q[1]*p[1] - q[2]*p[2] + q[3]*p[3]
-            ];
-        }
 
-        function qconjugate(q) {
-            return [-q[0], -q[1], -q[2], q[3]];
+        function qcompose(q, p) {
+            var v = q.slice(0,3);
+            var u = p.slice(0,3);
+            return [ v.map(e => e*p[3]), u.map(e => e*q[3]), cross(v,u) ]
+                .reduce(ttt).concat(q[3]*p[3] - dot(v,u));
         }
 
         function qnormalize(q) {
@@ -129,6 +112,38 @@
             q[1] /= l;
             q[2] /= l;
             q[3] /= l;
+        }
+
+        function qthree(q) {
+            var id = identity(3,1);
+            var v = q.slice(0,3);
+            var x = id.map(u => cross(u,v));
+            var m = [
+                out(v,v),
+                identity(3,q[3]*q[3]),
+                compose(identity(3,2*q[3]),x),
+                compose(x,x)
+            ].reduce(ete);
+            for(var i=0; i<3; i+=1) {
+                m[i][3] = 0;
+            }
+            m[3] = [0,0,0,1];
+            return m;
+        }
+
+        function qpfour(q,p) {
+            return compose(
+                [   [+q[0],-q[1],-q[2],-q[3]],
+                    [+q[1],+q[0],-q[3],+q[2]],
+                    [+q[2],+q[3],+q[0],-q[1]],
+                    [+q[3],-q[2],+q[1],+q[0]]
+                ],
+                [   [+p[0],-p[1],-p[2],-p[3]],
+                    [+p[1],+p[0],+p[3],-p[2]],
+                    [+p[2],-p[3],+p[0],+p[1]],
+                    [+p[3],+p[2],-p[1],+p[0]]
+                ]
+            );
         }
 
         function resize() {
@@ -143,12 +158,12 @@
 
         function init() {
             resize();
-//            var trap = true;
-//            document.addEventListener('click', m => trap ^= m.buttons>>>1 === 0);
-            document.addEventListener('mousemove', m => mouse = // !trap ?
-                [m.movementX*.125 + mouse[0]*.875, m.movementY*.125 + mouse[1]*.875]
-                //: [0,0]
-            );
+            document.addEventListener('mousemove', m => {
+                mouse[0] = m.movementX;
+                mouse[1] = m.movementY;
+                mouse[2] = m.pageX;
+                mouse[3] = m.pageY;
+            });
             if (!!ctx) {
                 requestAnimationFrame(loop);
             }
@@ -162,43 +177,42 @@
                 delta -= step;
             }
 
-            var id = identity(3,1);
-            var v = left.slice(0,3);
-            var x = id.map(u => cross(u,v));
-            five = [
-                out(v,v),
-                identity(3,left[3]*left[3]),
-                compose(identity(3,2*left[3]),x),
-                compose(x,x)
-            ].reduce(ete);
-            five[3] = [];
-            for(var i=0; i<3; i+=1) {
-                five[i][3] = 0;
-            }
-            five[3] = [0,0,0,1];
+            five = qpfour(left,right);
 
             four = [
-                [   [diagonal,0,0,0],
-                    [0,diagonal,0,0],
-                    [0,0,1.0,0],
-                    [0,0,1.0,0]
-                ],
-                [   [1,0,0,0],
-                    [0,1,0,0],
-                    [0,0,1,8],
-                    [0,0,0,1]
-                ]
-            ].reduce(compose);
+                [diagonal,0,0,0],
+                [0,diagonal,0,0],
+                [0,0,1.0,4.0],
+                [0,0,1.0,4.0]
+            ];
 
-            var l = Math.hypot(...mouse);
-            if(l != 0) {
-                var s = Math.sin(l/100/2);
-                var c = Math.cos(l/100/2);
-                left = qcompose(
-                    [s*mouse[1]/l,s*-mouse[0]/l,0,c],
-                    left
-                );
+            function slide(m, x, y, t) {
+                m[x] = m[x]*(1.0-t) + m[0]*t;
+                m[y] = m[y]*(1.0-t) + m[1]*t;
+                mouse[0] = 0;
+                mouse[1] = 0;
             }
+
+            var d = dot([mouse[0], mouse[1]], [mouse[2]-w2, mouse[3]-h2]);
+            if(d<0) {
+                slide(mouse,4,5,.25);
+            }
+            if(0<d){
+                slide(mouse,6,7,.25);
+            }
+
+            function twist(x, y) {
+                var l = Math.hypot(x, y);
+                if(l != 0) {
+                    var s = Math.sin(l/1024/2);
+                    return [s*y/l, s*-x/l, 0, Math.cos(l/1024/2)];
+                }
+                return [0,0,0,1];
+            }
+
+            left = qcompose(twist(mouse[4],mouse[5]), left);
+            right = qcompose(twist(mouse[6],mouse[7]), right);
+
             qnormalize(left);
             qnormalize(right);
 
@@ -215,7 +229,7 @@
             [0,1,9,11,10,8,9,13,15,11,3,7,15,14,10,2,6,14,12,8,0,4,12,13,5,7,6,4,5,1,3,2]
                 .map(i => [0,1,2,3].map(j => (Math.sign(i&(1<<j))<<1)-1))
                 .map(p => transform(five, p))
-                .map(p => p.slice(0,3).concat(2-p[3])) // 5d -> 4d
+                .map(p => p.slice(0,3).concat(3-p[3])) // 5d -> 4d
                 .map(p => transform(four, p))
                 .map(p => p.slice(0,2).map(d => d/p[3])) // 4d -> 3d -> 2d
                 .map(p => [p[0]+w2, p[1]+h2])
