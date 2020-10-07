@@ -1,0 +1,52 @@
+</script><!--This is setting up the styling for the text below-->
+<style type="text/css">
+    body {
+        background: black;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: hidden;
+    }
+    ul {
+        position: absolute;
+        color: white;
+        padding-left: 0;
+        padding-right: 0;
+        width: 100%;
+        text-align: center;
+        font-family: sans-serif;
+        mix-blend-mode: exclusion;
+    } 
+    #links{ top:18%;}
+    #links2{top: 22%;}
+    li {
+        display: inline;
+        margin-left: 1em;
+        margin-right: 1em;
+    }
+    a[href] {
+        text-decoration: none;
+        color: white;
+    }
+    a[href]:hover {
+        text-decoration: underline;
+    }
+    canvas {
+        display: block;
+    }
+</style>
+</head> <!--This stuff is where the content for the site goes link wise-->
+<ul id="links">
+    <li><a href="https://www.linkedin.com/in/ethan-rowe-b08a0a17a/">LinkedIn</a></li>
+    <li><a href="https://ethansrowe.github.io/Resume.pdf">Resume</a></li>
+    <li><a href="https://www.linkedin.com/in/ethan-rowe-b08a0a17a/">Projects</a></li>
+    
+</ul> 
+<ul id="links2">
+    <li><a href="https://www.instagram.com/ieee_wurov/">WUROV</a></li>
+    <li><a href="https://github.com/EthanSRowe">GitHub</a></li>
+</ul>
+<body onload="init();" onresize="resize();">
+    <canvas id="scene"></canvas>
+</body>
+</html>
