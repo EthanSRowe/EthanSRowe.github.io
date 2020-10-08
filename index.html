@@ -4,6 +4,15 @@
     <meta charset="utf-8"/>
     <title>Ethan Rowe, P.E.</title>
     <script type="application/x-javascript">
+        let cursor = 0;
+        const KONAMI_CODE = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
+        document.addEventListener('keydown', (e) => {
+        cursor = (e.keyCode == KONAMI_CODE[cursor]) ? cursor + 1 : 0;
+        if (cursor == KONAMI_CODE.length) activate();
+        });
+        function activate() {
+        document.title = "Yeet.";
+        }
         var ctx, w, w2, h, h2, diagonal;
 
         var left = [0,0,0,1];
