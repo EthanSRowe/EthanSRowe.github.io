@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <title>Ethan Rowe, ME</title>
     <script type="application/x-javascript">
-       var ctx, w, w2, h, h2, diagonal;
+      var ctx, w, w2, h, h2, diagonal;
 
 var left = [0,0,0,1];
 var right = [0,0,0,1];
@@ -133,15 +133,15 @@ function qthree(q) {
 
 function qpfour(q,p) {
     return compose(
-        [   [+q[2],+q[3],-q[1],+q[0]],
-            [+q[0],+q[1],+q[3],-q[2]],
-            [+q[1],-q[0],+q[2],+q[3]],
-            [+q[3],-q[2],-q[0],-q[1]]
+        [   [+q[3],-q[2],+q[1],+q[0]],
+            [+q[2],+q[3],-q[0],+q[1]],
+            [-q[1],+q[0],+q[3],+q[2]],
+            [-q[0],-q[1],-q[2],+q[3]]
         ],
-        [   [+p[2],+p[3],+p[1],-p[0]],
-            [+p[0],-p[1],+p[3],+p[2]],
-            [+p[1],+p[0],-p[2],+p[3]],
-            [+p[3],-p[2],-p[0],-p[1]]
+        [   [+p[3],+p[2],-p[1],+p[0]],
+            [-p[2],+p[3],+p[0],+p[1]],
+            [+p[1],-p[0],+p[3],+p[2]],
+            [-p[0],-p[1],-p[2],+p[3]]
         ],
     );
 }
@@ -158,6 +158,18 @@ function resize() {
 
 function init() {
     resize();
+    var touch = [0,0];
+    document.addEventListener('touchstart', m => {
+        touch = m.touches[0];
+    });
+    document.addEventListener('touchmove', m => {
+        m.preventDefault();
+        mouse[0] = m.touches[0] - touch[0];
+        mouse[1] = m.touches[1] - touch[1];
+        touch = m.touches[0];
+        mouse[2] = touch.pageX;
+        mouse[3] = touch.pageY;
+    });
     document.addEventListener('mousemove', m => {
         mouse[0] = m.movementX;
         mouse[1] = m.movementY;
@@ -181,8 +193,8 @@ function loop(tick) {
 
     four = [
         [diagonal,0,0,0],
-        [0,diagonal,0,h2],
-        [0,0,1.0,6.0]
+        [0,diagonal,0,0],
+        [0,0,1.0,8.0]
     ];
 
     function slide(m, x, y, t) {
@@ -196,24 +208,25 @@ function loop(tick) {
     if(d<0) slide(mouse,4,5,.125);
     if(0<d) slide(mouse,6,7,.125);
 
-    function twist(x, y) {
+    function twist(x, y, c, s) {
         var l = Math.hypot(x, y);
         if(0===l) {
+            var t = (tock/12000);
             return twist(
-                4*Math.cos((tock/Math.pow(2.0,15))*3.0),
-                3*Math.sin((tock/Math.pow(2.0,15))*4.0)
+                s*Math.cos(c*t),
+                c*Math.sin(s*t)
             );
         }
         else {
             var t = l/1024.0;
             var s = Math.sin(t/2);
-            return [s*y/l, s*-x/l, 0, Math.cos(t/2)];
+            return [s*x/l, s*y/l, 0, Math.cos(t/2)];
         }
         return [0,0,0,1];
     }
 
-    left = qcompose(twist(mouse[4],mouse[5]), left);
-    right = qcompose(twist(mouse[6],mouse[7]), right);
+    left = qcompose(twist(mouse[4],mouse[5],2,4), left);
+    right = qcompose(right, twist(mouse[6],mouse[7],4,2));
 
     qnormalize(left);
     qnormalize(right);
@@ -230,108 +243,128 @@ function project(p) {
     return t;
 }
 
+var outrun = 0;
+
+function play() {
+    if(!outrun) {
+        var music = document.createElement('iframe');
+        music.type = "text/html";
+        music.src="https://www.youtube-nocookie.com/embed/_Ci0Kgdpgsw?controls=0&autoplay=1";
+        music.frameborder="0";
+        music.allow="autoplay";
+        music.style="display:none;";
+        document.body.appendChild(music);
+        music.onload = function() {
+            outrun = performance.now();
+            tock = outrun;
+        }
+    }
+}
+
+if(location.search.includes("outrun")) {
+    document.title = "ｃｌｉｃｋｍｅ";
+    window.onclick = function(){
+        play();
+        window.onclick = null;
+        document.title = "ｔｈａｎｋｙｏｕ";
+    };
+}
+
 let cursor = 0;
 const KONAMI_CODE = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
-var outrun = false;
-document.addEventListener('keydown', (e) => {
-                if(e.keyCode === KONAMI_CODE[cursor])
-                    cursor += 1;
-                else {
-                    cursor = 0;
-                }
-                if(cursor === KONAMI_CODE.length) {
-                    outrun = true;
-                    tock = 0;
-                    var music = document.createElement('iframe');
-                    music.type = "text/html";
-                    music.src="https://www.youtube-nocookie.com/embed/_Ci0Kgdpgsw?controls=0&autoplay=1";
-                    music.frameborder="0";
-                    music.allow="autoplay";
-                    music.style="display:none;";
-                    document.body.appendChild(music);
-                }
-            });
 
+document.addEventListener('keydown', (e) => {
+    if(e.keyCode === KONAMI_CODE[cursor]) cursor += 1;
+    else cursor = 0;
+    if(cursor === KONAMI_CODE.length) play();
+});
 
 function draw() {
     ctx.clearRect(0,0,w,h);
     ctx.globalCompositeOperation = "source-over";
 
-    if(outrun) {
-                    var t = 1.0-(1.0/(1.0+(tock/3600.0)));
-                    ctx.strokeStyle = "rgb("+t*255+","+0+","+t*255+")";
-                    ctx.lineWidth=1;
+    if(!!outrun) {
+        var t = 1.0-(1.0/(1.0+((tock-outrun)/40000.0)));
+        var r = 1.0-Math.min(1.0,(tock-outrun)/40000.0);
+        ctx.strokeStyle = "rgb("+t*255+","+0+","+t*255+")";
+        ctx.lineWidth=1;
 
-                    for(var x=-2; x<=2; x+=.8) {
-                        ctx.beginPath();
-                        ctx.moveTo(...project([x,.5,16]));
-                        ctx.lineTo(...project([x,.5,1]));
-                        ctx.stroke();
-                    }
+        for(var x=-2; x<=2; x+=.8) {
+            ctx.beginPath();
+            ctx.moveTo(...project([x,.5,16]));
+            ctx.lineTo(...project([x,.5,1]));
+            ctx.stroke();
+        }
 
-                    ctx.beginPath();
-                    ctx.moveTo(...project([-2,.5,16]));
-                    ctx.lineTo(...project([+2,.5,16]));
-                    ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(...project([-2,.5,16]));
+        ctx.lineTo(...project([+2,.5,16]));
+        ctx.stroke();
 
-                    for(var z=1; z<=16; z+=1) {
-                        var m = z-(tock/1000.0)%1.0;
-                        ctx.beginPath();
-                        ctx.moveTo(...project([-2,.5,m]));
-                        ctx.lineTo(...project([+2,.5,m]));
-                        ctx.stroke();
-                    }
+        for(var z=1; z<=16; z+=1) {
+            var m = z-((tock-outrun)*3/4000.0)%1.0;
+            ctx.beginPath();
+            ctx.moveTo(...project([-2,.5,m]));
+            ctx.lineTo(...project([+2,.5,m]));
+            ctx.stroke();
+        }
 
-                    ctx.fillStyle = "rgb("+t*160+","+0+","+t*64+")";
-                    ctx.shadowColor = ctx.fillStyle;
-                    ctx.shadowBlur = 16+16*Math.pow(Math.sin(tock/1000.0),2);
-                    ctx.beginPath();
-                    ctx.arc(...project([0,.5,16.25]),diagonal/8.0,Math.PI,0);
-                    ctx.fill();
+        ctx.save();
+        ctx.rect(0,0,w,project([0,.45,15])[1]);
+        ctx.clip();
 
-                    ctx.strokeStyle = "#000000";
-                    ctx.shadowColor = "#FF0000";
-                    ctx.shadowBlur = 4;
-                    for(var y=0; y<3; y+=1) {
-                        ctx.beginPath();
-                        ctx.arc(
-                            ...project([0,.45,16]),
-                            diagonal/8.0 * (1.05 + 3*Math.pow((y/3 + tock/7200.0 )%1.0,.75)),
-                            Math.PI, 0
-                        );
-                        ctx.stroke();
-                    }
-                    for(var y=0; y<3; y+=1) {
-                        var m = .475-((y*2/3+tock/3600.0)%2.0);
-                        var s = Math.pow((.475-m)/2, 6)*1.75;
-                        ctx.beginPath();
-                        ctx.moveTo(...project([s-2,m,16]));
-                        ctx.lineTo(...project([2-s,m,16]));
-                        ctx.stroke();
-                    }
+        ctx.fillStyle = "rgb("+t*160+","+0+","+t*64+")";
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 16+16*Math.pow(Math.sin(tock/1000.0),2);
+        ctx.beginPath();
+        ctx.arc(...project([0,.5+2*r,16.25]),diagonal/8.0,Math.PI,0);
+        ctx.fill();
 
-                    ctx.shadowColor = "#FF00FF";
-                    ctx.beginPath();
-                    ctx.moveTo(...project([-8,.475,16]));
-                    ctx.lineTo(...project([+8,.475,16]));
-                    ctx.stroke();
+        ctx.strokeStyle = "#000000";
+        ctx.shadowColor = "#FF0000";
+        ctx.shadowBlur = 4;
+        for(var y=0; y<Math.min(3*(tock-outrun)/4000.0,3); y+=1) {
+            ctx.beginPath();
+            ctx.arc(
+                ...project([0,.45+2*r,16]),
+                diagonal/8.0 * (1 + 3*Math.pow((((tock-outrun)/4000.0 - y/3)%1.0),.75)),
+                Math.PI, 0
+            );
+            ctx.stroke();
+        }
+        for(var y=0; y<3; y+=1) {
+            var m = .475-2*((y*2/3+((tock-outrun)/4000.0))%1.0);
+            var s = Math.pow((.475-m)/2, 6)*1.75;
+            ctx.beginPath();
+            ctx.moveTo(...project([s-2,m+2*r,16]));
+            ctx.lineTo(...project([2-s,m+2*r,16]));
+            ctx.stroke();
+        }
 
-                    ctx.shadowBlur = 0;
-                    ctx.lineWidth = 1.0+t;
-                }
+        ctx.restore();
 
-                ctx.strokeStyle = "#FFFF00";
+        ctx.shadowColor = "#FF00FF";
+        ctx.beginPath();
+        ctx.moveTo(...project([-8,.475,16]));
+        ctx.lineTo(...project([+8,.475,16]));
+        ctx.stroke();
 
-                ctx.beginPath();
-                [0,1,9,11,10,8,9,13,15,11,3,7,15,14,10,2,6,14,12,8,0,4,12,13,5,7,6,4,5,1,3,2]
-                    .map(i => [0,1,2,3].map(j => (Math.sign(i&(1<<j))<<1)-1))
-                    .map(p => transform(five, p))
-                    .map(p => p.slice(0,3).concat(3-p[3])) // 5d -> 4d
-                    .map(project) // 4d -> 3d -> 2d
-                    .forEach(p => ctx.lineTo(...p));
-                ctx.closePath();
-                ctx.stroke();
-            }
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 1.0+t;
+    }
+
+    ctx.strokeStyle = "#FFFF00";
+
+    ctx.beginPath();
+    [0,1,9,11,10,8,9,13,15,11,3,7,15,14,10,2,6,14,12,8,0,4,12,13,5,7,6,4,5,1,3,2]
+        .map(i => [0,1,2,3].map(j => (Math.sign(i&(1<<j))<<1)-1))
+        .map(p => transform(five, p))
+        .map(p => p.slice(0,3).concat(3-p[3])) // 5d -> 4d
+        .map(project) // 4d -> 3d -> 2d
+        .forEach(p => ctx.lineTo(...p));
+    ctx.closePath();
+    ctx.stroke();
+}
     </script><!--This is setting up the styling for the text below-->
     <style type="text/css">
     @import url(https://fonts.googleapis.com/css?family=Exo+2:200i);
