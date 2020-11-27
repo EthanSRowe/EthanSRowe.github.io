@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8"/>
-    <title>Ethan Rowe, ME</title>
+    <title>Linear Algebra Mini Project 1</title>
     <script type="application/x-javascript">
       var ctx, w, w2, h, h2, diagonal;
 
@@ -10,7 +10,7 @@ var left = [0,0,0,1];
 var right = [0,0,0,1];
 var mouse = [0,0,0,0,0,0,0,0];
 
-function identity(d, s) {
+function identity(d, s) {  <!---Sets up ability to create matrices -->
     var m = [];
     for(var i=0; i<d; i+=1) {
         m[i] = [];
@@ -22,8 +22,8 @@ function identity(d, s) {
     return m;
 }
 
-var five = identity(4,1);
-var four = identity(4,1);
+var five = identity(4,1); <!--Perspective Matrix-->
+var four = identity(4,1); <!--Hyperotation Matrix-->
 
 function ttt(l, r) {
     var t = [];
@@ -41,7 +41,7 @@ function ete(l, r) {
     return m;
 }
 
-function dot(l, r) {
+function dot(l, r) { <!--Dot product matrix-->
     var d = 0.0;
     for(var i=0; i<Math.min(l.length,r.length); i+=1) {
         d += l[i]*r[i];
@@ -60,7 +60,7 @@ function out(l, r) {
     return m;
 }
 
-function transform(m, v) {
+function transform(m, v) { <!--Linear Transform-->
     var u = [];
     for(var i=0; i<m.length; i+=1) {
         u[i] = dot(m[i], v);
@@ -68,7 +68,7 @@ function transform(m, v) {
     return u;
 }
 
-function transpose(m) {
+function transpose(m) { <!--Linear transpose-->
     var t = [];
     for(var i=0; i<Math.max(...(m.map(a => a.length))); i+=1) {
         t[i] = [];
@@ -79,7 +79,7 @@ function transpose(m) {
     return t;
 }
 
-function compose(l, r) {
+function compose(l, r) { <!-- Matrix-Matrix multiplication-->
     var c = [];
     var t = transpose(r);
     for(var i=0; i<l.length; i+=1) {
@@ -91,7 +91,7 @@ function compose(l, r) {
     return c;
 }
 
-function cross(l, r) {
+function cross(l, r) { <!--Cross Product-->
     return [
         l[1]*r[2] - l[2]*r[1],
         l[2]*r[0] - l[0]*r[2],
@@ -99,14 +99,14 @@ function cross(l, r) {
     ];
 }
 
-function qcompose(q, p) {
+function qcompose(q, p) { <!--quaternion-quaternion mult--> <!--Special Rotations-->
     var v = q.slice(0,3);
     var u = p.slice(0,3);
     return [ v.map(e => e*p[3]), u.map(e => e*q[3]), cross(v,u) ]
         .reduce(ttt).concat(q[3]*p[3] - dot(v,u));
 }
 
-function qnormalize(q) {
+function qnormalize(q) { <!--Reduces error, code assumes unit q-->
     var l = Math.hypot(...q);
     q[0] /= l;
     q[1] /= l;
@@ -114,7 +114,7 @@ function qnormalize(q) {
     q[3] /= l;
 }
 
-function qthree(q) {
+function qthree(q) { <!--Testing quaternion-->
     var id = identity(3,1);
     var v = q.slice(0,3);
     var x = id.map(u => cross(u,v));
@@ -131,7 +131,7 @@ function qthree(q) {
     return m;
 }
 
-function qpfour(q,p) {
+function qpfour(q,p) { <!--Van Elfrionkhof Formula-->
     return compose(
         [   [+q[3],-q[2],+q[1],+q[0]],
             [+q[2],+q[3],-q[0],+q[1]],
@@ -146,7 +146,7 @@ function qpfour(q,p) {
     );
 }
 
-function resize() {
+function resize() { <!--Sets the scale for the screen-->
     var scene = document.getElementById('scene');
     w = scene.width = window.innerWidth;
     h = scene.height = window.innerHeight;
@@ -156,7 +156,7 @@ function resize() {
     ctx = scene.getContext('2d');
 }
 
-function init() {
+function init() { <!--Support for input method-->
     resize();
     var touch = [0,0];
     document.addEventListener('touchstart', m => {
@@ -180,6 +180,7 @@ function init() {
         requestAnimationFrame(loop);
     }
 }
+<!--Tick&Tock track time to draw a frame-->
 
 var step=1000/60, tock=0, delta=0;
 function loop(tick) {
